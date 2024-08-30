@@ -1,37 +1,66 @@
-// This script batch mints criceket ERC721A tokens.
-
-// Import required libraries
+//import c from "contracts/examples/erc721-transfer/FxERC721RootTunnel.sol"// Import necessary packages and contracts
 const { ethers } = require("hardhat");
+const { FXRootContractAbi } = require("../artifacts/FXRootContractAbi.js");
+const ABI = require("../artifacts/contracts/cu.sol/cu.json");
 require("dotenv").config();
 
+//Transfer ERC721A tokens to the Ethereum FxChain network
 async function main() {
-  // Get private key from env
-  const privateKey = process.env.PRIVATE_KEY;
-
-  // The URL of the network provider
+  // Set up connections to network and wallet
   const networkAddress =
     "https://ethereum-sepolia-rpc.publicnode.com";
-
-  // Create a provider using the URL
+  const privateKey = process.env.PRIVATE_KEY;
   const provider = new ethers.providers.JsonRpcProvider(networkAddress);
 
-  // Create a signer from the private key and provider
-  const signer = new ethers.Wallet(privateKey, provider);
+  // Create a wallet instance
+  const wallet = new ethers.Wallet(privateKey, provider);
 
-  // Tthe address of the deployed contract
-  const contractAddress = "0x643E0F9aBa4CFB2b26e9a18d84BED0cbD88F03e6";
+  // Get the signer instance
+  const [signer] = await ethers.getSigners();
 
-  // Get the contract factory and attach it to the signer
-  const IndianNFT = await ethers.getContractFactory("cu", signer);
-  const contract = await IndianNFT.attach(contractAddress);
+  // Get ERC721A contract instance
+  const NFT = await ethers.getContractFactory("cu");
+  const nft = await NFT.attach("0x643E0F9aBa4CFB2b26e9a18d84BED0cbD88F03e6");
 
-  // Call the mint function on the contract to mint 5 tokens
-  await contract.mint(5);
+  // Get FXRoot contract instance
+  const fxRootAddress = "0xF9bc4a80464E48369303196645e876c8C7D972de";
+  const fxRoot = await ethers.getContractAt(FXRootContractAbi, fxRootAddress);
 
-  // Log a message to the console to indicate that the tokens have been minted
-  console.log("Minted 5 tokens");
+  // TokenIds to transfer
+  const tokenIds = [0, 1, 2, 3, 4];
+
+  // Approve the nfts for transfer
+  const approveTx = await nft
+    .connect(signer)
+    .setApprovalForAll(fxRootAddress, true);
+  await approveTx.wait();
+  console.log("Approval confirmed");
+
+  // Deposit the nfts to the FXRoot contracts
+  for (let i = 0; i < tokenIds; i++) {
+    const depositTx = await fxRoot
+      .connect(signer)
+      .deposit(nft.address, wallet.address, tokenIds[i], "0x6566");
+
+    // Wait for the deposit to be confirmed
+    await depositTx.wait();
+  }
+
+  console.log("Approved and deposited");
+
+  // Test balanceOf
+  const balance = await nft.balanceOf(wallet.address);
+
+  // Print the balance of the wallet
+  console.log(
+    "IndianNFT wallet balance",
+    wallet.address,
+    "is: ",
+    balance.toString()
+  );
 }
 
+// Call the main function and handle any errors
 main()
   .then(() => process.exit(0))
   .catch((error) => {
