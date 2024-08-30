@@ -10,7 +10,7 @@ async function main() {
 
   // The URL of the network provider
   const networkAddress =
-    "https://rpc.sepolia.org";
+    "https://ethereum-sepolia-rpc.publicnode.com";
 
   // Create a provider using the URL
   const provider = new ethers.providers.JsonRpcProvider(networkAddress);
@@ -19,10 +19,10 @@ async function main() {
   const signer = new ethers.Wallet(privateKey, provider);
 
   // Tthe address of the deployed contract
-  const contractAddress = "0x78EDe6348F07E5499340b709d4e325963Dc651d5";
+  const contractAddress = "0x643E0F9aBa4CFB2b26e9a18d84BED0cbD88F03e6";
 
   // Get the contract factory and attach it to the signer
-  const IndianNFT = await ethers.getContractFactory("Gurdwara", signer);
+  const IndianNFT = await ethers.getContractFactory("cu", signer);
   const contract = await IndianNFT.attach(contractAddress);
 
   // Call the mint function on the contract to mint 5 tokens
